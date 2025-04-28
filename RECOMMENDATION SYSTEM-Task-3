@@ -1,0 +1,55 @@
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Step 1: Sample Movie Dataset
+movies = pd.DataFrame({
+    'title': [
+        'The Silent Forest', 'Space Journey', 'Romantic Escape',
+        'Mystery Lake', 'Future World', 'Historic Battles'
+    ],
+    'description': [
+        'A thrilling story set in an abandoned forest with secrets.',
+        'Adventure beyond Earth to unknown galaxies.',
+        'A love story between two souls finding freedom.',
+        'Detective story set around a mysterious lake town.',
+        'Sci-fi narrative about robots and future civilizations.',
+        'Epic battles during ancient history.'
+    ]
+})
+
+# Step 2: Feature Extraction (TF-IDF)
+vectorizer = TfidfVectorizer(stop_words='english')
+tfidf_matrix = vectorizer.fit_transform(movies['description'])
+
+# Step 3: Compute Similarity
+cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+
+# Step 4: Recommendation Function
+def recommend(movie_title, top_n=3):
+    # Check if movie exists
+    if movie_title not in movies['title'].values:
+        return f"Movie '{movie_title}' not found in database."
+    
+    # Get index of the movie
+    idx = movies.index[movies['title'] == movie_title][0]
+    
+    # Get pairwise similarity scores
+    sim_scores = list(enumerate(cosine_sim[idx]))
+    
+    # Sort movies based on similarity scores
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+    
+    # Get indices of top similar movies (excluding itself)
+    sim_indices = [i for i, score in sim_scores[1: top_n + 1]]
+    
+    # Return top movie titles
+    return movies['title'].iloc[sim_indices].tolist()
+
+# Step 5: Example Usage
+if __name__ == "__main__":
+    movie_to_search = 'Future World'
+    recommendations = recommend(movie_to_search)
+    print(f"Because you liked '{movie_to_search}', you might also enjoy:")
+    for rec in recommendations:
+        print(f"👉 {rec}")
